@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  ADMIN
+  DENTISTA
+  RECEPCIONISTA
+}
+
+enum AppointmentStatus {
+  PENDIENTE
+  CONFIRMADA
+  EN_CURSO
+  COMPLETADA
+  CANCELADA
+}
+
+enum ToothStatus {
+  SANO
+  CARIES
+  OBTURADO
+  EXTRAIDO
+  CORONA
+  ENDODONCIA
+  PROTESIS
+  IMPLANTE
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  nombre    String
+  apellido  String
+  role      Role     @default(RECEPCIONISTA)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  citasComoDentista  Appointment[]    @relation("DentistAppointments")
+  registrosClinicos  ClinicalRecord[] @relation("DentistRecords")
+
+  @@map("users")
+}
+
+model Patient {
+  id              String    @id @default(cuid())
+  nombre          String
+  apellido        String
+  ci              String    @unique
+  telefono        String?
+  email           String?
+  fechaNacimiento DateTime?
+  direccion       String?
+  alergias        String?
+  notas           String?
+  activo          Boolean   @default(true)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  citas             Appointment[]
+  registrosClinicos ClinicalRecord[]
+  odontograma       ToothRecord[]
+
+  @@map("patients")
+}
+
+model Appointment {
+  id         String            @id @default(cuid())
+  fecha      DateTime
+  horaInicio DateTime
+  horaFin    DateTime
+  motivo     String
+  notas      String?
+  estado     AppointmentStatus @default(PENDIENTE)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  pacienteId String
+  paciente   Patient @relation(fields: [pacienteId], references: [id])
+  dentistaId String
+  dentista   User    @relation("DentistAppointments", fields: [dentistaId], references: [id])
+
+  @@index([fecha])
+  @@index([dentistaId, fecha])
+  @@index([pacienteId])
+  @@map("appointments")
+}
+
+model ClinicalRecord {
+  id            String   @id @default(cuid())
+  fecha         DateTime @default(now())
+  diagnostico   String
+  tratamiento   String
+  observaciones String?
+  piezaDental   Int?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  pacienteId String
+  paciente   Patient @relation(fields: [pacienteId], references: [id])
+  dentistaId String
+  dentista   User    @relation("DentistRecords", fields: [dentistaId], references: [id])
+
+  @@index([pacienteId])
+  @@index([dentistaId])
+  @@map("clinical_records")
+}
+
+model ToothRecord {
+  id          String      @id @default(cuid())
+  numeroPieza Int
+  estado      ToothStatus @default(SANO)
+  notas       String?
+  updatedAt   DateTime    @updatedAt
+
+  pacienteId String
+  paciente   Patient @relation(fields: [pacienteId], references: [id])
+
+  @@unique([pacienteId, numeroPieza])
+  @@map("tooth_records")
+}
