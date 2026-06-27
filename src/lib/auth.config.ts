@@ -15,7 +15,8 @@ export const authConfig = {
         nextUrl.pathname.startsWith("/usuarios");
       const isApiProtected =
         nextUrl.pathname.startsWith("/api") &&
-        !nextUrl.pathname.startsWith("/api/auth");
+        !nextUrl.pathname.startsWith("/api/auth") &&
+        !nextUrl.pathname.startsWith("/api/health");
 
       if (isProtected || isApiProtected) {
         if (isLoggedIn) return true;
